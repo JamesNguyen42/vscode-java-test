@@ -493,6 +493,11 @@ export class JUnitRunnerResultAnalyzer extends RunnerResultAnalyzer {
 
     // See: org.eclipse.jdt.internal.junit.model.TestCaseElement#getTestMethodName()
     private getTestMethodName(testName: string): string {
+        // Parameterized invocation names are enclosed in square brackets. Parentheses
+        // inside them belong to the display name, rather than a generated class suffix.
+        if (testName.startsWith('[')) {
+            return testName;
+        }
         const index: number = testName.lastIndexOf('(');
         if (index > 0) {
             return testName.substring(0, index);

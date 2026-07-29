@@ -354,6 +354,32 @@ org.junit.ComparisonFailure: expected:<hello
         assert.strictEqual(testItemWithParams.description, '');
     });
 
+    test("preserves parentheses in parameterized test display names", () => {
+        const parent = generateTestItem(testController, 'junit@junit4.ParameterizedWithNameTest#test', TestKind.JUnit);
+        const invocation = testController.createTestItem('invocation', 'old label');
+        parent.children.add(invocation);
+        const testRun = testController.createTestRun(new TestRunRequest([parent], []));
+        const runnerContext: IRunTestContext = {
+            isDebug: false,
+            kind: TestKind.JUnit,
+            projectName: 'junit',
+            testItems: [parent],
+            testRun,
+            workspaceFolder: workspace.workspaceFolders?.[0]!,
+        };
+        const analyzer = new JUnitRunnerResultAnalyzer(runnerContext);
+
+        const result = analyzer.enlistDynamicMethodToTestMapping(
+            invocation.id,
+            parent,
+            dataCache.get(parent)!,
+            '[4: expect=(()]',
+            undefined,
+        );
+
+        assert.strictEqual(result.label, '[4: expect=(()]');
+    });
+
     test("test diff is not duplicated when failing assertion is extracted", () => {
         const range = new Range(9, 0, 11, 0);
         const testItem = generateTestItem(testController, 'junit@junit5.TestWithExtractedEqualityAssertion#test()', TestKind.JUnit5, range, undefined, 'TestWithExtractedEqualityAssertion.java');
