@@ -441,6 +441,41 @@ org.opentest4j.AssertionFailedError: expected: <1> but was: <2>
         sinon.assert.calledWith(passedSpy, dummy);
     });
 
+    test("can match JUnit 5 parameterized tests with primitive array arguments", () => {
+        const testItem = generateTestItem(testController, 'junit@junit5.ExampleTest#shouldDoParameterizedTest(double[])', TestKind.JUnit5, new Range(10, 0, 16, 0));
+        const testRunRequest = new TestRunRequest([testItem], []);
+        const testRun = testController.createTestRun(testRunRequest);
+        const enqueuedSpy = sinon.spy(testRun, 'enqueued');
+        const startedSpy = sinon.spy(testRun, 'started');
+        const passedSpy = sinon.spy(testRun, 'passed');
+        const testRunnerOutput = `%TESTC  0 v2
+%TSTTREE2,junit5.ExampleTest,true,1,false,1,ExampleTest,,[engine:junit-jupiter]/[class:junit5.ExampleTest]
+%TSTTREE3,shouldDoParameterizedTest(junit5.ExampleTest),true,0,false,2,shouldDoParameterizedTest(double[]),[D,[engine:junit-jupiter]/[class:junit5.ExampleTest]/[test-template:shouldDoParameterizedTest([D)]
+%TSTTREE4,shouldDoParameterizedTest(junit5.ExampleTest),false,1,true,3,[1] [0.01\\, 0.05],[D,[engine:junit-jupiter]/[class:junit5.ExampleTest]/[test-template:shouldDoParameterizedTest([D)]/[test-template-invocation:#1]
+%TESTS  4,shouldDoParameterizedTest(junit5.ExampleTest)
+%TESTE  4,shouldDoParameterizedTest(junit5.ExampleTest)
+%RUNTIME42`;
+        const runnerContext: IRunTestContext = {
+            isDebug: false,
+            kind: TestKind.JUnit5,
+            projectName: 'junit',
+            testItems: [testItem],
+            testRun: testRun,
+            workspaceFolder: workspace.workspaceFolders?.[0]!,
+        };
+
+        const analyzer = new JUnitRunnerResultAnalyzer(runnerContext);
+        const stub = sinon.stub(analyzer, "enlistDynamicMethodToTestMapping");
+        const dummy = generateTestItem(testController, 'dummy', TestKind.JUnit5, new Range(10, 0, 16, 0));
+        stub.returns(dummy);
+        analyzer.analyzeData(testRunnerOutput);
+
+        assert.strictEqual(enqueuedSpy.calledWith(testItem), false);
+        sinon.assert.calledWith(enqueuedSpy, dummy);
+        sinon.assert.calledWith(startedSpy, dummy);
+        sinon.assert.calledWith(passedSpy, dummy);
+    });
+
     test("can handle normal test method with multiple arguments", () => {
         const testItem = generateTestItem(testController, 'junit@junit5.VertxTest#test(Vertx, VertxTestContext)', TestKind.JUnit5, new Range(10, 0, 16, 0));
         const testRunRequest = new TestRunRequest([testItem], []);
